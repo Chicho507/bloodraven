@@ -1,5 +1,6 @@
 """Check a fresh, isolated CI demo over verified HTTPS; creates a paused test device."""
 from pathlib import Path
+import socket
 import ssl
 import sys
 import time
@@ -40,7 +41,14 @@ def main():
         assert any(d["id"] == "ci-smoke" and not d["enabled"] for d in client.get("/api/inventory").json()["devices"])
         assert client.post("/api/auth/logout", json={}).status_code == 200
         assert client.get("/api/inventory").status_code == 401
-    print("HTTPS, login, admin portal, inventory and logout verified in isolated demo.")
+    # IP clients omit SNI; Docker's destination IP differs from the site's identity.
+    # Keep CA verification and explicitly verify the hostname after the no-SNI handshake.
+    no_sni_context = ssl.create_default_context(cafile=sys.argv[1])
+    no_sni_context.check_hostname = False
+    with socket.create_connection(("127.0.0.1", 443), timeout=10) as connection:
+        with no_sni_context.wrap_socket(connection, server_hostname=None) as secured:
+            ssl.match_hostname(secured.getpeercert(), "localhost")
+    print("HTTPS with and without SNI, login, admin portal, inventory and logout verified in isolated demo.")
 
 
 if __name__ == "__main__":
