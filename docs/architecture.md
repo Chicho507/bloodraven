@@ -17,16 +17,24 @@ El dashboard consulta `/api/overview` cada 15 segundos. El recolector genera lec
 
 ## API
 
-Todas las rutas de datos y los archivos del dashboard requieren autenticación HTTP Basic detrás de HTTPS. `/healthz` es una señal de vida del proceso sin datos de inventario; no certifica que el recolector o Telegram estén conectados.
+Todas las rutas de datos y los archivos del dashboard requieren una sesión válida por cookie detrás de HTTPS. El login y sus recursos son públicos. Las mutaciones requieren origen exacto, token CSRF y JSON. Las rutas de administración validan el rol en el servidor. `/healthz` es una señal de vida del proceso sin datos de inventario; no certifica que el recolector o Telegram estén conectados.
 
 - `GET /api/overview`: inventario y estado actual, sin IP, configuración SNMP ni secretos.
 - `GET /api/devices/{id}/history?hours=1`: muestras de un equipo (hasta 24 horas por consulta).
 - `GET /api/events?hours=24`: eventos recientes y abiertos, hasta 500 registros.
 - `POST /api/demo/telegram`: formateador del bot sin envío real, solo disponible en demo.
 
+- `GET /api/auth/context`, `POST /api/auth/login`: contexto y acceso con nonce previo.
+- `POST /api/auth/logout`, `/api/auth/keepalive`, `/api/auth/password`: cierre, actividad y cambio de contraseña.
+- `GET/POST /api/inventory`, `PUT /api/inventory/{id}`, `POST /api/inventory/{id}/archive`: inventario, solo administradores.
+- `GET/POST /api/admin/users`, `PUT /api/admin/users/{id}`: cuentas y revocación de sesiones, solo administradores.
+- `GET /api/admin/audit`: últimos 500 registros, solo administradores.
+
 ## Persistencia
 
 SQLite WAL: estado por equipo, muestras indexadas por equipo/fecha, eventos y metadatos de offset Telegram. Se serializan escrituras mediante un bloqueo del proceso. El archivo de demo está separado del archivo live para impedir mezclar evidencia real con datos sintéticos.
+
+`control.sqlite3` conserva cuentas, hashes de contraseñas, sesiones revocables, inventario y auditoría; se comparte entre modos. El YAML solo inicializa el inventario una vez. Las credenciales propias del switch se cifran con Fernet; la clave está en el entorno o en `inventory.key`, fuera del repositorio. Los cambios web actualizan el inventario en memoria, y una lectura en curso se descarta si cambió la revisión del equipo.
 
 Los contadores SNMP de 64 bits se conservan como enteros. Las tasas se calculan con el tiempo transcurrido entre dos lecturas válidas de la misma interfaz. Reinicios y discontinuidades invalidan el cálculo; los huecos quedan visibles. Una primera muestra no se representa como 0 Mbps.
 
@@ -40,4 +48,4 @@ Los contadores SNMP de 64 bits se conservan como enteros. Las tasas se calculan 
 6. Umbrales térmicos propios del modelo y criterios operativos de alertas.
 7. Confianza de certificados en los equipos cliente y acceso privado del bot.
 
-Fuera del alcance actual: cambios de configuración en switches, descubrimiento automático, consultas PoE, alertas push, múltiples usuarios del panel, inventario editable por web, métricas de CPU/temperatura SG350 y operación redundante.
+Fuera del alcance actual: cambios de configuración en switches, descubrimiento automático, consultas PoE, alertas push, SSO/Active Directory, MFA, restauración de archivos, métricas de CPU/temperatura SG350 y operación redundante.
