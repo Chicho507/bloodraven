@@ -1,8 +1,12 @@
-# BloodRaven
+# BloodRaven · SERTRACEN Panamá
 
-Monitor multisucursal con dashboard oscuro, historial SQLite y consultas desde Telegram. Primera versión para un piloto en Ubuntu Server con Docker Compose.
+Monitor multisucursal con dashboard oscuro, historial SQLite y consultas desde Telegram. **Versión 0.2.0-beta.1**, piloto para Ubuntu Server con Docker Compose.
 
 ## Estado de esta versión
+
+- Portal SERTRACEN con login propio antes del dashboard, cierre de sesión y cambio de contraseña.
+- Inventario web: registrar, editar, pausar y archivar switches Cisco, Dell y UniFi por sucursal; credenciales SNMP cifradas.
+- Cuentas de administrador y consulta, controles CSRF, sesiones revocables y auditoría de accesos/cambios. Ver [controles y límites de seguridad](docs/security.md).
 
 - Dashboard conectado al backend: inventario, estado, CPU, temperatura, tráfico de una interfaz por switch e historial de la última hora.
 - Modo **demo** predeterminado: datos sintéticos, claramente identificados; no consulta switches. La conversación de Telegram dentro del panel es un simulador.
@@ -11,7 +15,7 @@ Monitor multisucursal con dashboard oscuro, historial SQLite y consultas desde T
 - Un único acceso publicado: HTTPS TCP 443. El backend, SQLite y el bot quedan dentro del despliegue.
 - Historial y eventos persisten en un volumen. Demo y live utilizan bases diferentes.
 
-**Validación:** pruebas automatizadas locales y revisión de la interfaz. Aún no se han consultado los switches reales ni conectado el bot a una cuenta real. Docker Compose debe validarse en el Ubuntu del piloto: Docker no estaba disponible en el equipo de desarrollo inicial.
+**Validación:** pruebas automatizadas locales y revisión de la interfaz. Aún no se han consultado los switches reales ni conectado el bot a una cuenta real. El flujo de GitHub Actions comprueba las pruebas y la construcción Docker. Queda validar el despliegue y la conectividad en el Ubuntu del piloto.
 
 ## Inventario confirmado
 
@@ -37,7 +41,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-El asistente pide la IPv4 o el nombre DNS de Ubuntu, crea `.env` con una contraseña aleatoria y copia el inventario local a `config/devices.yml`. Conserva ambos archivos si ya existen. El usuario del panel es `admin`; la contraseña está en `BR_PASSWORD` dentro de `.env`.
+El asistente pide la IPv4 o el nombre DNS de Ubuntu, crea `.env` con una contraseña aleatoria y una clave de cifrado del inventario; copia el inventario local a `config/devices.yml`. Conserva ambos archivos si ya existen. El usuario del panel es `admin`; la contraseña está en `BR_PASSWORD` dentro de `.env`. Esta cuenta se crea solamente en el primer arranque. Después, cambia tu contraseña desde **Mi cuenta** y administra las demás cuentas desde **Usuarios y acceso**. Cambiar `BR_PASSWORD` tras inicializar la base no restablece las cuentas.
 
 Abrir `https://IP_O_NOMBRE_DEL_UBUNTU`. Caddy emite un certificado con su CA interna. Para que los equipos cliente lo acepten, distribuir y confiar en **el certificado público raíz** mediante el procedimiento de certificados de la organización, o configurar un certificado corporativo. Exportación del certificado público:
 
@@ -54,14 +58,18 @@ Si Ubuntu ya tiene un servicio en el puerto 443, integrar BloodRaven con su prox
 
 1. Confirmar conectividad desde Ubuntu hasta las IP de gestión y acceso SNMP UDP 161 a través de las redes de las sucursales.
 2. Configurar en los switches un usuario SNMPv3 con autenticación, cifrado y acceso de lectura a los objetos necesarios. Comprobar protocolos compatibles con cada firmware: esta versión acepta SHA256 o SHA, y AES128.
-3. Editar `.env` con `SNMP_USERNAME`, `SNMP_AUTH_PASSWORD` y `SNMP_PRIVACY_PASSWORD`. El inventario solo guarda **nombres de variables**, nunca secretos. Para credenciales distintas por switch, añadir variables distintas a `.env` y referenciarlas desde su bloque `snmp`.
-4. Editar `config/devices.yml`: completar `host`, `firmware`, `interface_index` y, si se conoce el límite del modelo, `warn_temperature_c`. Habilitar primero un CBS350 con `enabled: true`.
+3. Entrar al portal con una cuenta administradora y abrir **Administrar → Equipos de red → Registrar switch**. Completar identificador, nombre, sucursal, fabricante/perfil, modelo, IP o DNS de gestión, firmware, ubicación e índice de interfaz. Las nuevas altas comienzan pausadas. Editar los tres registros Cisco iniciales para completar sus datos.
+4. Introducir el usuario y ambas claves SNMPv3 en el formulario; se cifran al guardar y no se vuelven a mostrar. Al editar, dejar los tres campos vacíos conserva las claves. Revisar el perfil y habilitar primero un equipo. Las variables `SNMP_*` del servidor siguen disponibles como alternativa heredada para inventarios sin claves propias. Ajustar `BR_ALLOWED_NETWORKS` a las subredes de gestión permitidas: por defecto admite rangos privados RFC1918. El recolector resuelve DNS y verifica la IP antes de consultar.
 5. Cambiar `BR_MODE=live` y recrear el servicio:
 
 ```bash
 docker compose up -d --force-recreate app
 docker compose logs --tail=60 app
 ```
+
+**No necesitas editar YAML para las altas posteriores.** `config/devices.yml` se importa una sola vez al inicializar `control.sqlite3`; desde entonces el inventario del portal es la fuente de configuración, compartida entre demo y live. Cambiar YAML después no sobreescribe los registros web. Archivar conserva los datos históricos en la base, pero esta beta no incluye restauración ni consulta gráfica de muestras archivadas.
+
+Los perfiles **Dell, UniFi y Cisco estándar** consultan disponibilidad y tráfico IF-MIB. No prometen CPU, temperatura ni PoE: se deben confirmar los modelos exactos y las lecturas disponibles. SNMPv3 debe habilitarse en cada equipo o en UniFi Network según corresponda.
 
 `interface_index` es el `ifIndex` SNMP confirmado de la interfaz a medir; no se supone que coincida con el número físico del puerto. Sin índice, el recolector consulta disponibilidad y, para CBS350, CPU y temperatura; el tráfico queda sin datos. Las tasas requieren dos muestras válidas consecutivas. Se descartan cálculos tras reinicio, discontinuidad, cambio de interfaz o disminución del contador.
 
@@ -98,11 +106,11 @@ El bot lee la misma base que el dashboard. En demo identifica sus respuestas com
 - **Sin respuesta SNMP:** tres consultas consecutivas fallidas. No significa necesariamente que el switch esté apagado: también puede fallar la ruta, la autenticación o la vista SNMP.
 - **Pendiente:** equipo deshabilitado, credenciales ausentes o revisión SG350 pendiente; no se consulta.
 
-Se mide tráfico de una interfaz, no velocidad disponible de internet. Para llamarlo consumo de internet hay que confirmar qué tráfico atraviesa ese enlace. El sistema es un piloto con una única instancia de backend, autenticación de un usuario de panel y disponibilidad observada desde un servidor; no es una solución de alta disponibilidad ni una certificación ISO 27001.
+Se mide tráfico de una interfaz, no velocidad disponible de internet. Para llamarlo consumo de internet hay que confirmar qué tráfico atraviesa ese enlace. El sistema es un piloto con una única instancia de backend, cuentas locales con permisos de administrador o consulta y disponibilidad observada desde un servidor; no es una solución de alta disponibilidad ni una certificación ISO 27001.
 
 ## Persistencia y actualización
 
-`BR_RETENTION_DAYS` conserva muestras durante 7 días por defecto (rango 1–90). Los eventos abiertos se conservan. Para respaldar sin inconsistencias de SQLite, detener temporalmente `app`, respaldar el volumen `measurements` y volver a iniciarlo; conservar también `.env`, el inventario y los volúmenes de Caddy en el respaldo protegido de la organización.
+`BR_RETENTION_DAYS` conserva muestras durante 7 días por defecto (rango 1–90). Los eventos abiertos se conservan. Para respaldar sin inconsistencias de SQLite, detener temporalmente `app`, respaldar el volumen `measurements` y volver a iniciarlo. Ese volumen contiene las muestras y `control.sqlite3` (cuentas, sesiones, inventario cifrado y auditoría). Conservar también `.env`, el inventario inicial y los volúmenes de Caddy en el respaldo protegido de la organización. La clave `BR_ENCRYPTION_KEY` es necesaria para recuperar las credenciales; si se dejó vacía, conservar `inventory.key` del volumen de datos. No generar una clave nueva sobre una base existente: el arranque detecta la diferencia y se detiene.
 
 ```bash
 git pull --ff-only
@@ -119,6 +127,8 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
+Para desarrollo HTTP local, usar **solo en loopback** `BR_COOKIE_SECURE=false` y `BR_PUBLIC_ORIGIN=http://127.0.0.1:8000`. En el servidor conservar cookies seguras y HTTPS; el origen debe coincidir exactamente con la URL del navegador.
+
 Para ejecución directa, exportar las variables de `.env` al proceso según el mecanismo de tu entorno; Uvicorn no las carga automáticamente. Ejecutar una sola instancia/worker y mantener el enlace de desarrollo en loopback:
 
 ```bash
@@ -132,4 +142,4 @@ Para ejecución directa, exportar las variables de `.env` al proceso según el m
 - [Ficha Cisco SG350](https://www.cisco.com/c/en/us/products/collateral/switches/small-business-smart-switches/data-sheet-c78-737359.html).
 - [Publicación de puertos Docker](https://docs.docker.com/engine/network/port-publishing/).
 
-Fecha de la primera versión: 7 de septiembre de 2026.
+Beta 0.2: 8 de septiembre de 2026. Ver [cambios](CHANGELOG.md).
