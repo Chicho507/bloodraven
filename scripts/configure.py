@@ -13,7 +13,10 @@ def main():
     if destination.exists():
         print(".env ya existe; se conserva. Edita ese archivo para cambiar opciones.")
     else:
-        hostname = input("IPv4 o nombre DNS del Ubuntu (sin https://) [localhost]: ").strip() or "localhost"
+        try:
+            hostname = input("IPv4 o nombre DNS del Ubuntu (sin https://) [localhost]: ").strip() or "localhost"
+        except EOFError:
+            hostname = "localhost"
         if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9.-]*", hostname):
             raise SystemExit("Introduce únicamente la IP o un nombre DNS válido")
         password = secrets.token_urlsafe(24)
