@@ -1,0 +1,12 @@
+.git
+.env*
+!.env.example
+config/devices.yml
+data
+certificates
+tests
+__pycache__
+**/__pycache__
+*.sqlite*
+.venv
+*.log

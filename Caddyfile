@@ -1,0 +1,7 @@
+{
+    auto_https disable_redirects
+}
+https://{$BR_HOSTNAME:localhost} {
+    tls internal
+    reverse_proxy app:8000
+}
