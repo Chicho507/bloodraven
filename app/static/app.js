@@ -58,7 +58,7 @@
     else parent?.addEventListener("abort", abort, {once: true});
     const timer = window.setTimeout(abort, 12000);
     try {
-      const response = await fetch(url, {...options, signal: timeout.signal, credentials: "same-origin", cache: "no-store", headers: {Accept: "application/json", ...options.headers}});
+      const response = await BloodRaven.fetch(url, {...options, signal: timeout.signal, credentials: "same-origin", cache: "no-store", headers: {Accept: "application/json", ...options.headers}});
       if (!response.ok) {
         if (response.status === 401) throw new Error("La sesión requiere autenticación. Vuelve a cargar el panel para identificarte.");
         throw new Error(`El servidor respondió con HTTP ${response.status}.`);

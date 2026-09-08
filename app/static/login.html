@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#063451"><title>SERTRACEN · BloodRaven | Acceso</title><link rel="stylesheet" href="/static/auth.css"><script src="/static/auth.js" defer></script></head>
+<body class="login-page">
+  <main class="access-shell">
+    <section class="access-story" aria-labelledby="portal-title">
+      <div class="institution">SERTRACEN <span>PANAMÁ</span></div>
+      <div class="story-copy"><div class="overline"><span class="small-line"></span> TECNOLOGÍA E INFRAESTRUCTURA</div><h1 id="portal-title">Una red conectada.<br>Una operación<br><em>bajo control.</em></h1><p>Visibilidad de tus sucursales, estado de los equipos y consultas rápidas desde un solo lugar.</p></div>
+      <div class="network-art" aria-hidden="true"><div class="network-orbit orbit-one"></div><div class="network-orbit orbit-two"></div><div class="network-core">BR<span>BLOODRAVEN</span></div><span class="network-node node-one">ALBROOK</span><span class="network-node node-two">CHORRERA</span><span class="network-node node-three">COLÓN</span></div>
+      <div class="story-footer"><span>MONITOREO MULTISUCURSAL</span><span>01 / ACCESO</span></div>
+    </section>
+    <section class="access-form-wrap" aria-labelledby="login-title">
+      <div class="access-top"><span>PORTAL DE INFRAESTRUCTURA</span><span class="beta">BETA 0.2</span></div>
+      <div class="login-card">
+        <div class="sertracen-logo"><img src="/static/sertracen.png" alt="SERTRACEN Panamá"></div>
+        <div class="card-divider"></div><div class="overline blue">BLOODRAVEN MONITOR</div>
+        <h2 id="login-title">Bienvenido de nuevo.</h2><p class="form-intro">Inicia sesión para acceder a tu centro de operaciones.</p>
+        <form id="login-form">
+          <label for="username">Usuario o correo institucional</label><input id="username" name="username" placeholder="Tu usuario autorizado" autocomplete="username" maxlength="120" required autofocus>
+          <div class="password-label"><label for="password">Contraseña</label><span>Acceso privado</span></div>
+          <div class="password-wrap"><input id="password" name="password" type="password" placeholder="Introduce tu contraseña" autocomplete="current-password" maxlength="128" required><button type="button" id="show-password" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button></div>
+          <p id="login-error" class="form-error" role="alert" hidden></p>
+          <button id="login-submit" class="primary" type="submit" disabled>Ingresar al portal <span aria-hidden="true">→</span></button>
+        </form>
+        <div class="restricted-note"><span aria-hidden="true">◇</span><p><strong>Uso exclusivo de personal autorizado</strong>Los accesos y cambios administrativos se registran. Para solicitar una cuenta, contacta al administrador del portal.</p></div>
+      </div>
+      <footer class="access-footer"><span>SERTRACEN Panamá · BloodRaven</span><span id="version">Versión 0.2.0-beta.1 · Piloto interno</span></footer>
+    </section>
+  </main>
+</body></html>

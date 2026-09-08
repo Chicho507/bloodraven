@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#0b1019">
-    <title>BloodRaven · Monitor multisucursal</title>
+    <title>SERTRACEN · BloodRaven Beta | Monitor</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/brand.css">
+    <script src="/static/session.js" defer></script>
     <script src="/static/app.js" defer></script>
   </head>
   <body>
@@ -21,9 +23,10 @@
       </nav>
       <main class="main" id="main">
         <header class="topbar">
-          <div><div class="brand">BLOODRAVEN<span class="brand-dot">.</span></div><div class="eyebrow">Monitor multisucursal</div></div>
+          <div><div class="brand">BLOODRAVEN<span class="brand-dot">.</span></div><div class="eyebrow">SERTRACEN Panamá · <span data-version>Beta 0.2</span></div></div>
           <div class="topbar-meta"><span id="mode-badge" class="mode-badge">Conectando…</span><time id="clock" class="clock"></time></div>
         </header>
+        <div class="account-strip"><span>Bienvenido, <strong data-user>usuario</strong></span><div><a href="/manage" data-admin hidden>Administrar equipos y usuarios ↗</a><a href="/account">Mi cuenta</a><button type="button" data-logout>Cerrar sesión</button></div></div>
 
         <section class="hero" aria-labelledby="page-title">
           <div class="hero-copy"><div class="eyebrow">Centro de operaciones</div><h1 id="page-title">Tu red, de un vistazo.</h1><p id="inventory-description" class="sub">Cargando inventario de switches…</p></div>
