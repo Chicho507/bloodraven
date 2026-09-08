@@ -16,7 +16,17 @@ PASSWORD = "only-for-tests-never-deploy"
 
 
 def settings(directory, mode="live"):
-    return Settings(mode, "tester", PASSWORD, str(Path(directory) / f"{mode}.sqlite3"), [DEVICE], telegram_allowed_ids=set())
+    return Settings(mode, "tester", PASSWORD, str(Path(directory) / f"{mode}.sqlite3"), [DEVICE], telegram_allowed_ids=set(), secure_cookies=False, public_origin="http://testserver")
+
+
+def login(client, username="tester", password=PASSWORD):
+    client.cookies.clear()
+    context = client.get("/api/auth/context").json()
+    client.headers.update({"Origin": "http://testserver", "X-CSRF-Token": context["csrf"]})
+    response = client.post("/api/auth/login", json={"username": username, "password": password})
+    if response.status_code == 200:
+        client.headers["X-CSRF-Token"] = response.json()["csrf"]
+    return response
 
 
 def sample(**changes):
@@ -84,10 +94,14 @@ class APITests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             with TestClient(create_app(settings(directory), start_workers=False)) as client:
                 self.assertEqual(client.get("/healthz").status_code, 200)
-                for path in ("/", "/api/overview", "/static/app.js", "/api/events"):
+                for path in ("/api/overview", "/api/events", "/api/inventory"):
                     self.assertEqual(client.get(path).status_code, 401)
+                for path in ("/", "/static/app.js", "/manage"):
+                    self.assertEqual(client.get(path, follow_redirects=False).status_code, 303)
+                self.assertEqual(client.get("/login").status_code, 200)
                 self.assertEqual(client.get("/api/overview", headers={"Authorization": "Basic %invalid"}).status_code, 401)
-                response = client.get("/api/overview", auth=("tester", PASSWORD))
+                self.assertEqual(login(client).status_code, 200)
+                response = client.get("/api/overview")
                 self.assertEqual(response.status_code, 200)
                 self.assertNotIn("_counter", response.json()["devices"][0])
                 self.assertNotIn("snmp", response.json()["devices"][0])
@@ -95,7 +109,7 @@ class APITests(unittest.TestCase):
     def test_demo_bot_and_history_use_same_store_and_live_simulator_is_disabled(self):
         with tempfile.TemporaryDirectory() as directory:
             with TestClient(create_app(settings(directory, "demo"), start_workers=False)) as client:
-                client.auth = ("tester", PASSWORD)
+                self.assertEqual(login(client).status_code, 200)
                 response = client.post("/api/demo/telegram", json={"command": "/sucursal albrook"})
                 self.assertEqual(response.status_code, 200)
                 self.assertIn("DEMO", response.json()["reply"])
@@ -104,7 +118,8 @@ class APITests(unittest.TestCase):
                 self.assertEqual(client.get("/api/devices/unknown/history").status_code, 404)
                 self.assertEqual(client.get("/api/devices/albrook/history?hours=900").status_code, 422)
             with TestClient(create_app(settings(directory), start_workers=False)) as client:
-                self.assertEqual(client.post("/api/demo/telegram", auth=("tester", PASSWORD), json={"command": "/estado"}).status_code, 404)
+                self.assertEqual(login(client).status_code, 200)
+                self.assertEqual(client.post("/api/demo/telegram", json={"command": "/estado"}).status_code, 404)
 
 
 if __name__ == "__main__":

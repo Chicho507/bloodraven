@@ -106,6 +106,28 @@ class PollDeviceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(credentials.privacy_protocol, snmp.USM_PRIV_CFB128_AES)
         self.engine_factory.return_value.close_dispatcher.assert_called_once()
 
+    async def test_generic_profiles_only_query_standard_interface_objects(self):
+        for profile in ("cisco_generic", "dell_generic", "unifi_generic"):
+            with self.subTest(profile=profile):
+                self.get.reset_mock()
+                self.device["profile"] = profile
+                self.queue_readings({f"{snmp.IF_HC_IN_OCTETS}.49": Counter64(123), f"{snmp.IF_HC_OUT_OCTETS}.49": Counter64(456)})
+                result = await snmp.poll_device(self.device)
+                self.assertTrue(result["ok"])
+                self.assertEqual(result["in_octets"], 123)
+                self.assertIsNone(result["cpu_percent"])
+                self.assertIsNone(result["temperature_c"])
+                requested = [oid for call in self.get.await_args_list for oid in call.args[4:]]
+                self.assertTrue(all(oid.startswith("1.3.6.1.2.1.") for oid in requested))
+
+    async def test_encrypted_vault_values_work_without_environment_credentials(self):
+        self.device["_credentials"] = ["vault-monitor", "vault-auth-passphrase", "vault-priv-passphrase"]
+        with patch.dict(os.environ, {}, clear=True):
+            self.queue_readings()
+            result = await snmp.poll_device(self.device)
+        self.assertTrue(result["ok"])
+        self.assertNotIn("vault-", str(result))
+
     async def test_missing_optional_objects_remain_null_while_zero_uptime_is_valid(self):
         self.queue_readings({
             snmp.CBS_CPU_ONE_MINUTE: NoSuchInstance(""),
