@@ -17,3 +17,14 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: for file in app/static/*.js; do node --check "$file"; done
       - run: docker build -t bloodraven:check .
+      - name: Prepare isolated demo deployment
+        run: python scripts/configure.py < /dev/null
+      - name: Start complete HTTPS deployment
+        run: docker compose up -d --build --wait --wait-timeout 120
+      - name: Verify HTTPS login and persisted inventory
+        run: |
+          docker compose cp proxy:/data/caddy/pki/authorities/local/root.crt /tmp/bloodraven-root.crt
+          python scripts/smoke.py /tmp/bloodraven-root.crt
+      - name: Stop isolated deployment
+        if: always()
+        run: docker compose down
