@@ -1,5 +1,6 @@
 """Preparar configuración local sin sobrescribir secretos existentes."""
 from pathlib import Path
+import base64
 import os
 import re
 import secrets
@@ -19,6 +20,7 @@ def main():
         content = (root / ".env.example").read_text(encoding="utf-8")
         content = content.replace("REPLACE_WITH_A_RANDOM_PASSWORD_BEFORE_STARTING", password)
         content = content.replace("BR_HOSTNAME=localhost", "BR_HOSTNAME=" + hostname)
+        content = content.replace("BR_ENCRYPTION_KEY=", "BR_ENCRYPTION_KEY=" + base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
         fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
             stream.write(content)
