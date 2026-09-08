@@ -46,6 +46,8 @@ class Settings:
     telegram_enabled: bool = False
     telegram_token: str = ""
     telegram_allowed_ids: set[int] | None = None
+    secure_cookies: bool = True
+    public_origin: str = "https://localhost"
 
 
 def load_settings() -> Settings:
@@ -66,7 +68,7 @@ def load_settings() -> Settings:
     if not devices or len({d["id"] for d in devices}) != len(devices):
         raise ValueError("El inventario necesita equipos con identificadores únicos")
     for device in devices:
-        if device["profile"] not in {"cisco_cbs350", "cisco_sg350"}:
+        if device["profile"] not in {"cisco_cbs350", "cisco_sg350", "cisco_generic", "dell_generic", "unifi_generic"}:
             raise ValueError("Perfil SNMP no soportado")
         for key in ("username_env", "auth_password_env", "privacy_password_env"):
             if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", device["snmp"][key]):
@@ -85,5 +87,9 @@ def load_settings() -> Settings:
     if enabled and (not token or not ids or any(i <= 0 for i in ids)):
         raise ValueError("Telegram necesita token y una lista de IDs de usuarios autorizados")
     directory = Path(os.getenv("BR_DATA_DIR", "data"))
+    secure = os.getenv("BR_COOKIE_SECURE", "true").lower() == "true"
+    origin = os.getenv("BR_PUBLIC_ORIGIN", "https://" + os.getenv("BR_HOSTNAME", "localhost")).rstrip("/")
+    if secure and not origin.startswith("https://"):
+        raise ValueError("El portal requiere HTTPS cuando BR_COOKIE_SECURE=true")
     return Settings(mode, username, password, str(directory / f"{mode}.sqlite3"), devices,
-                    interval, interval * 3 + 5, days, enabled, token, ids)
+                    interval, interval * 3 + 5, days, enabled, token, ids, secure, origin)

@@ -1,9 +1,9 @@
 import asyncio
-import base64
 from contextlib import asynccontextmanager
-import hmac
+import ipaddress
 import os
 from pathlib import Path
+import socket
 import time
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -11,12 +11,14 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import load_settings
+from app.control import Control, ControlError
+from app.security import install_security
 from app.snmp import poll_device
 from app.store import Store, stamp
 from app.telegram_bot import format_command, run_bot
 
 
-async def collector(settings, store, stop):
+async def collector(settings, store, control, stop):
     gate = asyncio.Semaphore(4)
 
     async def one(device):
@@ -24,17 +26,31 @@ async def collector(settings, store, stop):
             if device["profile"] == "cisco_sg350" and (not device.get("firmware_reviewed") or not device.get("firmware")):
                 store.pending(device, "Revisión de firmware SG350 pendiente; no se ha consultado el equipo")
                 return
-            references = device["snmp"]
-            if any(not os.getenv(references[k], "") for k in ("username_env", "auth_password_env", "privacy_password_env")):
+            try:
+                configured = control.poll_config(device)
+            except ControlError:
+                return
+            references = configured.get("snmp", {})
+            if not configured.get("_credentials") and any(not os.getenv(references.get(k, ""), "") for k in ("username_env", "auth_password_env", "privacy_password_env")):
                 store.pending(device, "Faltan credenciales SNMP en el servidor; no se ha consultado el equipo")
                 return
             try:
-                result = await poll_device(device)
+                # Resolve once and pin that exact address for this poll. Only configured networks may be queried.
+                networks = [ipaddress.ip_network(value.strip()) for value in os.getenv("BR_ALLOWED_NETWORKS", "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16").split(",")]
+                addresses = await asyncio.wait_for(asyncio.get_running_loop().getaddrinfo(configured["host"], configured.get("port", 161), family=socket.AF_INET, type=socket.SOCK_DGRAM), timeout=3)
+                target = ipaddress.ip_address(addresses[0][4][0])
+                if target.is_loopback or target.is_link_local or target.is_multicast or not any(target in network for network in networks):
+                    store.pending(device, "La IP resuelta está fuera de las redes de gestión autorizadas")
+                    return
+                configured["host"] = str(target)
+                result = await poll_device(configured)
             except asyncio.CancelledError:
                 raise
             except Exception:
                 result = {"ok": False, "error": "Error de recolección; revisar configuración"}
-            store.record(device, result)
+            current = next((d for d in settings.devices if d["id"] == device["id"]), None)
+            if current and current.get("revision") == device.get("revision"):
+                store.record(current, result)
 
     while not stop.is_set():
         started = time.monotonic()
@@ -55,14 +71,16 @@ def create_app(settings=None, start_workers=True):
     @asynccontextmanager
     async def lifespan(application):
         cfg = settings or load_settings()
+        control = Control(cfg)
         store = Store(cfg)
         store.seed_demo()
         application.state.settings = cfg
         application.state.store = store
+        application.state.control = control
         stop = asyncio.Event()
         tasks = []
         if start_workers:
-            tasks.append(asyncio.create_task(collector(cfg, store, stop)))
+            tasks.append(asyncio.create_task(collector(cfg, store, control, stop)))
             if cfg.telegram_enabled:
                 tasks.append(asyncio.create_task(run_bot(store, stop, cfg.telegram_token, cfg.telegram_allowed_ids)))
         try:
@@ -73,30 +91,11 @@ def create_app(settings=None, start_workers=True):
                 task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
             store.close()
+            control.close()
 
     application = FastAPI(title="BloodRaven", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
-    @application.middleware("http")
-    async def auth_and_headers(request: Request, call_next):
-        if request.url.path != "/healthz":
-            cfg = request.app.state.settings
-            try:
-                method, encoded = request.headers.get("authorization", "").split(" ", 1)
-                if method.lower() != "basic":
-                    raise ValueError()
-                username, password = base64.b64decode(encoded, validate=True).decode("utf-8").split(":", 1)
-                valid = hmac.compare_digest(username.encode(), cfg.username.encode()) & hmac.compare_digest(password.encode(), cfg.password.encode())
-            except (ValueError, UnicodeError):
-                valid = False
-            if not valid:
-                return JSONResponse({"detail": "Autenticación requerida"}, status_code=401,
-                                    headers={"WWW-Authenticate": 'Basic realm="BloodRaven", charset="UTF-8"', "Cache-Control": "no-store"})
-        response = await call_next(request)
-        response.headers["Cache-Control"] = "no-store"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Referrer-Policy"] = "no-referrer"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
-        return response
+    install_security(application)
 
     @application.get("/healthz")
     def health():
@@ -135,7 +134,7 @@ def create_app(settings=None, start_workers=True):
 
     @application.get("/static/{filename}")
     def static_asset(filename: str):
-        if filename not in {"styles.css", "app.js"}:
+        if filename not in {"styles.css", "app.js", "brand.css", "auth.css", "auth.js", "session.js", "manage.css", "manage.js", "account.js", "sertracen.png"}:
             raise HTTPException(404)
         return FileResponse(static / filename)
 

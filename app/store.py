@@ -156,6 +156,7 @@ class Store:
             now, devices = utcnow(), []
             for device in self.settings.devices:
                 value = self._current(device["id"]) or self._blank(device)
+                value.update({k: device[k] for k in ("id", "name", "site", "model")})
                 value = {k: v for k, v in value.items() if not k.startswith("_")}
                 if value["status"] in {"ok", "warning"} and value["last_success_at"]:
                     if (now - parse_stamp(value["last_success_at"])).total_seconds() > self.settings.stale_after:
@@ -207,6 +208,9 @@ class Store:
         with self.lock:
             for i, device in enumerate(self.settings.devices):
                 old = self._current(device["id"]) or self._blank(device)
+                if not device.get("enabled") and not device.get("demo_seed"):
+                    self.pending(device, "Monitoreo pausado")
+                    continue
                 value = dict(old)
                 down = i == 2
                 value.update(status="offline" if down else "warning" if i == 1 else "ok",

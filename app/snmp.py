@@ -85,11 +85,11 @@ def _interface_name(value: Any) -> str | None:
         return None
 
 
-def _credentials(config: dict[str, Any]) -> UsmUserData:
-    """Only named environment variables can supply SNMP credentials."""
+def _credentials(config: dict[str, Any], supplied=None) -> UsmUserData:
+    """Credentials originate in environment references or the encrypted vault."""
     fields = ("username_env", "auth_password_env", "privacy_password_env")
     values = []
-    for field in fields:
+    for field in fields if supplied is None else ():
         name = config.get(field)
         if not isinstance(name, str) or not _ENV_NAME.fullmatch(name):
             raise ValueError("invalid credential reference")
@@ -97,6 +97,10 @@ def _credentials(config: dict[str, Any]) -> UsmUserData:
         if not value:
             raise ValueError("missing credential")
         values.append(value)
+    if supplied is not None:
+        if not isinstance(supplied, list) or len(supplied) != 3 or not all(isinstance(v, str) and v for v in supplied):
+            raise ValueError("invalid stored credentials")
+        values = supplied
     username, auth_password, privacy_password = values
     if not 1 <= len(username.encode("utf-8")) <= 32:
         raise ValueError("invalid username")
@@ -151,7 +155,7 @@ async def poll_device(device: dict[str, Any]) -> dict[str, Any]:
     """
     result = _empty_result()
     profile = device.get("profile")
-    if profile not in {"cisco_cbs350", "cisco_sg350"}:
+    if profile not in {"cisco_cbs350", "cisco_sg350", "cisco_generic", "dell_generic", "unifi_generic"}:
         result["error"] = "Perfil SNMP sin configurar o no compatible."
         return result
     if profile == "cisco_sg350" and (
@@ -174,7 +178,7 @@ async def poll_device(device: dict[str, Any]) -> dict[str, Any]:
         snmp_config = device.get("snmp")
         if not isinstance(snmp_config, dict):
             raise ValueError("missing credentials")
-        credentials = _credentials(snmp_config)
+        credentials = _credentials(snmp_config, device.get("_credentials"))
         result["interface_index"] = index
     except Exception:
         result["error"] = "Configuración SNMPv3 incompleta o inválida; revisar host, índice y variables de entorno."
