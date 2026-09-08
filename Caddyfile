@@ -1,5 +1,6 @@
 {
     auto_https disable_redirects
+    default_sni {$BR_HOSTNAME:localhost}
 }
 https://{$BR_HOSTNAME:localhost} {
     tls internal
