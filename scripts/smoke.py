@@ -47,7 +47,7 @@ def main():
     no_sni_context.check_hostname = False
     with socket.create_connection(("127.0.0.1", 443), timeout=10) as connection:
         with no_sni_context.wrap_socket(connection, server_hostname=None) as secured:
-            ssl.match_hostname(secured.getpeercert(), "localhost")
+            assert ("DNS", "localhost") in secured.getpeercert().get("subjectAltName", ()), "Unexpected certificate identity"
     print("HTTPS with and without SNI, login, admin portal, inventory and logout verified in isolated demo.")
 
 
