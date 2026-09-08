@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0b1019">
+    <title>BloodRaven · Monitor multisucursal</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <div class="shell">
+      <nav class="rail" aria-label="Secciones del monitor">
+        <a class="monogram" href="#general" aria-label="BloodRaven, vista general">BR<span></span></a>
+        <button class="nav-button" type="button" data-view="general" aria-pressed="true"><span class="nav-icon" aria-hidden="true">▦</span><span>General</span></button>
+        <button class="nav-button" type="button" data-view="events" aria-pressed="false"><span class="nav-icon" aria-hidden="true">↯</span><span>Eventos</span></button>
+        <button class="nav-button" type="button" data-view="telegram" aria-pressed="false"><span class="nav-icon" aria-hidden="true">↗</span><span>Telegram</span></button>
+        <span class="rail-foot" aria-hidden="true">NET / OPS</span>
+      </nav>
+      <main class="main" id="main">
+        <header class="topbar">
+          <div><div class="brand">BLOODRAVEN<span class="brand-dot">.</span></div><div class="eyebrow">Monitor multisucursal</div></div>
+          <div class="topbar-meta"><span id="mode-badge" class="mode-badge">Conectando…</span><time id="clock" class="clock"></time></div>
+        </header>
+
+        <section class="hero" aria-labelledby="page-title">
+          <div class="hero-copy"><div class="eyebrow">Centro de operaciones</div><h1 id="page-title">Tu red, de un vistazo.</h1><p id="inventory-description" class="sub">Cargando inventario de switches…</p></div>
+          <div class="health"><div class="ring" id="health-ring" role="img" aria-label="Esperando lecturas"><div class="ring-core"><strong id="health-count">—</strong><span>RESPONDEN</span></div></div><div class="health-copy"><strong id="health-title">Esperando lecturas</strong><span id="health-description">Consultando el servidor</span></div></div>
+        </section>
+
+        <div id="api-error" class="notice error" role="alert" hidden><div><strong>El panel no recibe actualizaciones.</strong><span id="api-error-message"></span></div><button class="link-button" id="retry" type="button">Reintentar ↻</button></div>
+        <div id="attention" class="notice" hidden><span id="attention-text"></span><button class="link-button" id="show-events" type="button">Ver eventos →</button></div>
+
+        <section id="overview" aria-label="Switches por sucursal">
+          <div class="section-head"><h2>Tu infraestructura</h2><span class="sub" id="poll-age">Última consulta: —</span></div>
+          <div class="device-grid" id="devices" aria-busy="true"><div class="empty-state">Conectando con BloodRaven…</div></div>
+        </section>
+
+        <div class="bottom" id="bottom">
+          <section class="panel detail" id="detail" aria-labelledby="detail-name">
+            <div class="detail-head"><div><div class="eyebrow">Switch seleccionado</div><h2 id="detail-name">Esperando inventario</h2><div id="detail-device" class="sub">—</div></div><span class="status-pill" id="detail-status">Pendiente</span></div>
+            <div class="detail-timing"><span id="detail-last">Último dato válido: —</span><span id="detail-uptime">Tiempo encendido: —</span></div>
+            <div class="values" id="detail-values"></div>
+            <div class="chart-heading"><div><h3>Tráfico del enlace</h3><span id="interface-name" class="sub">Interfaz por configurar</span></div><div class="legend"><span><i class="legend-rx"></i>Entrada</span><span><i class="legend-tx"></i>Salida</span></div></div>
+            <div class="chart-wrap"><svg id="history-chart" class="chart" role="img" aria-label="Historial de tráfico del enlace, en megabits por segundo"></svg><div id="history-message" class="chart-message">Esperando una selección</div></div>
+            <div class="chart-foot"><span>Última hora · Mbps</span><span id="history-count">Sin muestras</span></div>
+            <p class="detail-note" id="detail-note">Las métricas aparecerán después de la primera lectura.</p>
+          </section>
+
+          <section class="panel events-panel" id="events-panel" aria-labelledby="events-title" hidden>
+            <div class="section-head"><div><div class="eyebrow">Registro de monitoreo</div><h2 id="events-title">Eventos de las últimas 24 h</h2></div><span id="event-count" class="count-badge">—</span></div>
+            <p class="sub">Cambios observados desde el servidor. Selecciona un equipo para abrir sus métricas.</p>
+            <div id="events" aria-busy="false"><p class="empty-state">Cargando eventos…</p></div>
+          </section>
+
+          <section class="phone" id="telegram-panel" aria-labelledby="telegram-title">
+            <header class="phone-head"><div class="avatar" aria-hidden="true">↗</div><div><h2 id="telegram-title">BloodRaven Bot</h2><div id="telegram-subtitle" class="sub">Consultas desde tu teléfono</div></div><span class="phone-dot" aria-hidden="true"></span></header>
+            <div id="telegram-demo" hidden>
+              <div class="demo-label">SIMULADOR · No envía mensajes a Telegram</div>
+              <div class="chat"><div class="bubble user" id="user-message">/estado</div><div class="bubble" id="bot-message" aria-live="polite">Consulta el estado de tus sucursales con los botones o escribe un comando.</div><div class="chat-stamp" id="bot-stamp">Respuesta con los datos de demostración del servidor</div></div>
+              <div class="commands"><button type="button" data-command="/estado">Estado general</button><button type="button" data-command="selected">Esta sucursal</button><button type="button" data-command="/alertas">Alertas activas</button><button type="button" data-command="/historial 24h">Historial 24 h</button></div>
+              <form id="command-form" class="compose"><input id="command-input" name="command" aria-label="Consulta simulada de Telegram" placeholder="/sucursal albrook" autocomplete="off" maxlength="160"><button id="command-submit" type="submit" aria-label="Consultar al simulador">Enviar ↗</button></form>
+            </div>
+            <div id="telegram-live" class="telegram-info">
+              <div class="eyebrow">Tu red, en el bolsillo</div><h3>Una consulta. Toda la información.</h3><p>Cuando el bot esté configurado, abre su conversación en Telegram con una cuenta autorizada.</p>
+              <ul class="command-reference"><li><code>/estado</code><span>Resumen de todos los switches</span></li><li><code id="live-site-command">/sucursal albrook</code><span>Métricas de una sucursal</span></li><li><code>/alertas</code><span>Equipos que requieren atención</span></li><li><code>/historial 24h</code><span>Eventos de las últimas 24 horas</span></li></ul>
+              <p class="telegram-note">La conexión del bot se configura en el servidor. Esta pantalla no confirma su estado de conexión.</p>
+            </div>
+          </section>
+        </div>
+        <footer class="footer"><span id="snapshot-time">Esperando la primera actualización</span><span>Panel: cada 15 s <span aria-hidden="true">·</span> SNMP: según configuración del servidor</span></footer>
+      </main>
+    </div>
+    <noscript><div class="noscript">Activa JavaScript para consultar el monitor BloodRaven.</div></noscript>
+  </body>
+</html>
