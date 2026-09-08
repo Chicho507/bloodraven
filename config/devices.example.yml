@@ -1,0 +1,43 @@
+# Copiar a config/devices.yml (archivo local excluido de Git).
+# Inventario parcial confirmado: tres switches. No son lecturas reales.
+# index SNMP no siempre coincide con el número físico del puerto.
+devices:
+  - id: albrook
+    name: SW-ALBROOK
+    site: Albrook
+    model: CBS350-48FP-4G
+    profile: cisco_cbs350
+    enabled: false
+    host: null
+    firmware: ''
+    interface_index: null
+    warn_temperature_c: null
+    snmp:
+      username_env: SNMP_USERNAME
+      auth_password_env: SNMP_AUTH_PASSWORD
+      privacy_password_env: SNMP_PRIVACY_PASSWORD
+      auth_protocol: SHA256
+      privacy_protocol: AES128
+  - id: chorrera
+    name: SW-CHORRERA
+    site: Chorrera
+    model: CBS350-48FP-4G
+    profile: cisco_cbs350
+    enabled: false
+    host: null
+    firmware: ''
+    interface_index: null
+    warn_temperature_c: null
+  - id: colon
+    name: SW-COLON
+    site: Colón
+    model: SG350-52MP
+    profile: cisco_sg350
+    enabled: false
+    host: null
+    firmware: ''
+    firmware_reviewed: false
+    interface_index: null
+    warn_temperature_c: null
+    # Validar versión y configuración PoE: CVE-2026-20185.
+    # Este perfil consulta solo sistema y una interfaz; CPU/temperatura aún no mapeadas.
