@@ -24,7 +24,7 @@ def main():
                     raise
                 time.sleep(1)
         assert client.get("/api/inventory").status_code == 401
-        assert "SERTRACEN" in client.get("/login").text
+        assert "BloodRaven" in client.get("/login").text
         preauth = client.get("/api/auth/context").json()
         client.headers.update({"Origin": "https://localhost", "X-CSRF-Token": preauth["csrf"]})
         signed_in = client.post("/api/auth/login", json={"username": environment["BR_USERNAME"], "password": environment["BR_PASSWORD"]})
@@ -33,7 +33,7 @@ def main():
         client.headers["X-CSRF-Token"] = signed_in.json()["csrf"]
         assert client.get("/").status_code == 200
         assert client.get("/manage").status_code == 200
-        for asset in ("session.js", "manage.js", "sertracen.png"):
+        for asset in ("session.js", "manage.js"):
             client.get("/static/" + asset).raise_for_status()
         saved = client.post("/api/inventory", json={"id": "ci-smoke", "name": "SW-CI-TEST", "site": "CI lab",
                             "model": "Dell generic test", "profile": "dell_generic", "host": "10.99.99.9", "enabled": False})
