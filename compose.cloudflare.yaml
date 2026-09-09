@@ -1,0 +1,21 @@
+# Optional DNS-01 certificate profile. Requires Docker Compose >= 2.24.4.
+# Use configure_tls.py on the server to select this profile persistently.
+services:
+  app:
+    environment:
+      BR_COOKIE_SECURE: 'true'
+      BR_PUBLIC_ORIGIN: https://${BR_HOSTNAME:?Configura el nombre DNS del portal}
+  proxy:
+    image: bloodraven-caddy-cloudflare:2.11.4
+    build:
+      context: ./deploy/caddy
+    environment:
+      BR_HOSTNAME: ${BR_HOSTNAME:?Configura el nombre DNS del portal}
+      BR_ACME_RESOLVERS: ${BR_ACME_RESOLVERS:-1.1.1.1:53 1.0.0.1:53}
+    ports: !override
+      - '${BR_BIND_IP:?Configura la IPv4 interna del servidor}:443:443/tcp'
+    secrets:
+      - cloudflare_api_token
+secrets:
+  cloudflare_api_token:
+    file: ./secrets/cloudflare_api_token
