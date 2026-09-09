@@ -14,7 +14,7 @@ def main():
         print(".env ya existe; se conserva. Edita ese archivo para cambiar opciones.")
     else:
         try:
-            hostname = input("IPv4 o nombre DNS del Ubuntu (sin https://) [localhost]: ").strip() or "localhost"
+            hostname = input("IPv4 o DNS de acceso del navegador, incluso con NAT/VPN (sin https://) [localhost]: ").strip() or "localhost"
         except EOFError:
             hostname = "localhost"
         if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9.-]*", hostname):
@@ -29,6 +29,7 @@ def main():
             stream.write(content)
         print("Creado .env con una contraseña aleatoria. Usuario: admin.")
         print("Consulta BR_PASSWORD dentro de .env en este servidor para iniciar sesión.")
+    (root / "config" / "branding").mkdir(parents=True, exist_ok=True)
     inventory = root / "config" / "devices.yml"
     if not inventory.exists():
         shutil.copyfile(root / "config" / "devices.example.yml", inventory)

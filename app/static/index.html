@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#0b1019">
-    <title>SERTRACEN · BloodRaven Beta | Monitor</title>
+    <title>{{BR_ORGANIZATION}} · BloodRaven Beta | Monitor</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/brand.css">
     <script src="/static/session.js" defer></script>
@@ -23,7 +23,7 @@
       </nav>
       <main class="main" id="main">
         <header class="topbar">
-          <div><div class="brand">BLOODRAVEN<span class="brand-dot">.</span></div><div class="eyebrow">SERTRACEN Panamá · <span data-version>Beta 0.2</span></div></div>
+          <div><div class="brand">BLOODRAVEN<span class="brand-dot">.</span></div><div class="eyebrow">{{BR_ORGANIZATION}} {{BR_REGION}} · <span data-version>Beta 0.2</span></div></div>
           <div class="topbar-meta"><span id="mode-badge" class="mode-badge">Conectando…</span><time id="clock" class="clock"></time></div>
         </header>
         <div class="account-strip"><span>Bienvenido, <strong data-user>usuario</strong></span><div><a href="/manage" data-admin hidden>Administrar equipos y usuarios ↗</a><a href="/account">Mi cuenta</a><button type="button" data-logout>Cerrar sesión</button></div></div>
@@ -64,11 +64,11 @@
               <div class="demo-label">SIMULADOR · No envía mensajes a Telegram</div>
               <div class="chat"><div class="bubble user" id="user-message">/estado</div><div class="bubble" id="bot-message" aria-live="polite">Consulta el estado de tus sucursales con los botones o escribe un comando.</div><div class="chat-stamp" id="bot-stamp">Respuesta con los datos de demostración del servidor</div></div>
               <div class="commands"><button type="button" data-command="/estado">Estado general</button><button type="button" data-command="selected">Esta sucursal</button><button type="button" data-command="/alertas">Alertas activas</button><button type="button" data-command="/historial 24h">Historial 24 h</button></div>
-              <form id="command-form" class="compose"><input id="command-input" name="command" aria-label="Consulta simulada de Telegram" placeholder="/sucursal albrook" autocomplete="off" maxlength="160"><button id="command-submit" type="submit" aria-label="Consultar al simulador">Enviar ↗</button></form>
+              <form id="command-form" class="compose"><input id="command-input" name="command" aria-label="Consulta simulada de Telegram" placeholder="/sucursal sede-uno" autocomplete="off" maxlength="160"><button id="command-submit" type="submit" aria-label="Consultar al simulador">Enviar ↗</button></form>
             </div>
             <div id="telegram-live" class="telegram-info">
               <div class="eyebrow">Tu red, en el bolsillo</div><h3>Una consulta. Toda la información.</h3><p>Cuando el bot esté configurado, abre su conversación en Telegram con una cuenta autorizada.</p>
-              <ul class="command-reference"><li><code>/estado</code><span>Resumen de todos los switches</span></li><li><code id="live-site-command">/sucursal albrook</code><span>Métricas de una sucursal</span></li><li><code>/alertas</code><span>Equipos que requieren atención</span></li><li><code>/historial 24h</code><span>Eventos de las últimas 24 horas</span></li></ul>
+              <ul class="command-reference"><li><code>/estado</code><span>Resumen de todos los switches</span></li><li><code id="live-site-command">/sucursal sede-uno</code><span>Métricas de una sucursal</span></li><li><code>/alertas</code><span>Equipos que requieren atención</span></li><li><code>/historial 24h</code><span>Eventos de las últimas 24 horas</span></li></ul>
               <p class="telegram-note">La conexión del bot se configura en el servidor. Esta pantalla no confirma su estado de conexión.</p>
             </div>
           </section>

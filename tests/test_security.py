@@ -90,7 +90,7 @@ class PortalTests(unittest.TestCase):
         for path in ("/api/inventory","/api/admin/users","/api/admin/audit","/manage"):
             self.assertEqual(self.client.get(path).status_code,403)
         self.assertEqual(self.client.post("/api/inventory",json=device()).status_code,403)
-        self.assertEqual(self.client.post("/api/inventory/albrook/archive",json={"revision":1}).status_code,403)
+        self.assertEqual(self.client.post("/api/inventory/sede-uno/archive",json={"revision":1}).status_code,403)
 
     def test_encrypted_inventory_persists_and_never_returns_passwords(self):
         self.signed_in()

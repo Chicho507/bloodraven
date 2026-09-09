@@ -5,9 +5,10 @@ from pathlib import Path
 
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.branding import page
 from app.control import ControlError, InventoryInput, PROFILES, VERSION
 
 
@@ -38,7 +39,7 @@ class RevisionInput(BaseModel):
 def install_security(application):
     static = Path(__file__).parent / "static"
     public = {"/healthz", "/login", "/api/auth/context", "/api/auth/login",
-              "/static/auth.css", "/static/auth.js", "/static/sertracen.png"}
+              "/static/auth.css", "/static/auth.js", "/static/brand-logo.png"}
 
     def cookie_names(cfg):
         prefix = "__Host-" if cfg.secure_cookies else "dev-"
@@ -110,7 +111,7 @@ def install_security(application):
 
     @application.get("/login")
     def login_page(request: Request):
-        return RedirectResponse("/", status_code=303) if request.state.user else FileResponse(static / "login.html")
+        return RedirectResponse("/", status_code=303) if request.state.user else page(static / "login.html")
 
     @application.get("/api/auth/context")
     def context(request: Request):
@@ -154,11 +155,11 @@ def install_security(application):
     @application.get("/manage")
     def management(request: Request):
         admin(request)
-        return FileResponse(static / "manage.html")
+        return page(static / "manage.html")
 
     @application.get("/account")
     def account_page():
-        return FileResponse(static / "account.html")
+        return page(static / "account.html")
 
     @application.get("/api/inventory")
     def inventory(request: Request):

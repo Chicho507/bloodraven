@@ -139,7 +139,7 @@ def format_command(command: str, overview: dict, events: list[dict]) -> str:
             lines.extend(["", "Sucursales disponibles:", *[f"• {site}" for site in sites]])
             if not sites:
                 lines.append("Sin equipos configurados.")
-            lines.append("\nUsa /sucursal nombre (ejemplo: /sucursal albrook).")
+            lines.append("\nUsa /sucursal nombre (ejemplo: /sucursal sede-uno).")
         else:
             matches = [d for d in devices if _site_key(argument) in _site_aliases(d)]
             lines.extend(["", f"Sucursal: {_plain(argument)}"])

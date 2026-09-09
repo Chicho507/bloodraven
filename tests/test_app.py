@@ -10,7 +10,7 @@ from app.main import create_app
 from app.store import Store, rates, stamp, utcnow
 
 
-DEVICE = {"id": "albrook", "name": "SW-ALBROOK", "site": "Albrook", "model": "CBS350-48FP-4G",
+DEVICE = {"id": "sede-uno", "name": "SW-SEDE-UNO", "site": "Sede-Uno", "model": "CBS350-48FP-4G",
           "profile": "cisco_cbs350", "enabled": True, "warn_temperature_c": 60}
 PASSWORD = "only-for-tests-never-deploy"
 
@@ -110,13 +110,13 @@ class APITests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             with TestClient(create_app(settings(directory, "demo"), start_workers=False)) as client:
                 self.assertEqual(login(client).status_code, 200)
-                response = client.post("/api/demo/telegram", json={"command": "/sucursal albrook"})
+                response = client.post("/api/demo/telegram", json={"command": "/sucursal sede-uno"})
                 self.assertEqual(response.status_code, 200)
                 self.assertIn("DEMO", response.json()["reply"])
-                self.assertIn("SW-ALBROOK", response.json()["reply"])
-                self.assertTrue(client.get("/api/devices/albrook/history").json()["samples"])
+                self.assertIn("SW-SEDE-UNO", response.json()["reply"])
+                self.assertTrue(client.get("/api/devices/sede-uno/history").json()["samples"])
                 self.assertEqual(client.get("/api/devices/unknown/history").status_code, 404)
-                self.assertEqual(client.get("/api/devices/albrook/history?hours=900").status_code, 422)
+                self.assertEqual(client.get("/api/devices/sede-uno/history?hours=900").status_code, 422)
             with TestClient(create_app(settings(directory), start_workers=False)) as client:
                 self.assertEqual(login(client).status_code, 200)
                 self.assertEqual(client.post("/api/demo/telegram", json={"command": "/estado"}).status_code, 404)

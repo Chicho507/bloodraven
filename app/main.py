@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.branding import logo_path, page
 from app.config import load_settings
 from app.control import Control, ControlError
 from app.security import install_security
@@ -130,12 +131,16 @@ def create_app(settings=None, start_workers=True):
 
     @application.get("/")
     def index():
-        return FileResponse(static / "index.html")
+        return page(static / "index.html")
 
     @application.get("/static/{filename}")
     def static_asset(filename: str):
-        if filename not in {"styles.css", "app.js", "brand.css", "auth.css", "auth.js", "session.js", "manage.css", "manage.js", "account.js", "sertracen.png"}:
+        if filename not in {"styles.css", "app.js", "brand.css", "auth.css", "auth.js", "session.js", "manage.css", "manage.js", "account.js", "brand-logo.png"}:
             raise HTTPException(404)
+        if filename == "brand-logo.png":
+            if not logo_path().is_file():
+                raise HTTPException(404)
+            return FileResponse(logo_path(), media_type="image/png")
         return FileResponse(static / filename)
 
     return application
