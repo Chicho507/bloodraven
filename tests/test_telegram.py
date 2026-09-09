@@ -26,7 +26,7 @@ OVERVIEW = {
     "generated_at": "2026-09-07T18:00:00+00:00",
     "last_poll_at": "2026-09-07T17:59:40+00:00",
     "devices": [
-        {"id": "alb-1", "name": "Switch Albrook", "site": "Albrook", "site_id": "alb",
+        {"id": "site-1", "name": "Switch Sede-Uno", "site": "Sede-Uno", "site_id": "site",
          "site_aliases": ["Terminal"], "model": "Demo", "status": "ok", "cpu_percent": 18.5,
          "temperature_c": 38.0, "rx_mbps": 10.0, "tx_mbps": 3.0,
          "last_success_at": "2026-09-07T17:59:40Z", "interface": {"name": "uplink", "index": 1}},
@@ -90,29 +90,29 @@ class FormatTests(unittest.TestCase):
         self.assertEqual(result, format_command("/estado", OVERVIEW, EVENTS))
 
     def test_site_name_id_and_alias_casefold(self):
-        for term in ["AlBrOoK", "ALB", "terminal"]:
+        for term in ["SeDe-UnO", "SITE", "terminal"]:
             with self.subTest(term=term):
                 result = format_command(f"/sucursal {term}", OVERVIEW, [])
-                self.assertIn("Switch Albrook", result)
+                self.assertIn("Switch Sede-Uno", result)
                 self.assertNotIn("Switch Matriz", result)
                 self.assertIn("CPU 18.5%", result)
                 self.assertIn("entrada 10.0 Mbps", result)
                 self.assertIn("no una prueba de velocidad", result)
 
-    def test_colon_accepts_accents_and_phone_spelling(self):
+    def test_deposito_accepts_accents_and_phone_spelling(self):
         overview = copy.deepcopy(OVERVIEW)
-        overview["devices"][0].update(site="Colón", name="SW-COLON")
-        for term in ["colon", "COLÓN", "Colo\u0301n"]:
+        overview["devices"][0].update(site="Depósito", name="SW-DEPOSITO")
+        for term in ["deposito", "DEPÓSITO", "Depo\u0301sito"]:
             with self.subTest(term=term):
                 reply = format_command(f"/sucursal {term}", overview, [])
-                self.assertIn("SW-COLON", reply)
+                self.assertIn("SW-DEPOSITO", reply)
                 self.assertNotIn("No encuentro", reply)
 
     def test_nested_site_aliases_and_bot_command_suffix(self):
         overview = copy.deepcopy(OVERVIEW)
-        overview["devices"][0]["site"] = {"id": "s-01", "name": "Albrook", "aliases": ["Norte"]}
+        overview["devices"][0]["site"] = {"id": "s-01", "name": "Sede-Uno", "aliases": ["Norte"]}
         result = format_command("/sucursal@BloodRavenBot NORTE", overview, [])
-        self.assertIn("Switch Albrook", result)
+        self.assertIn("Switch Sede-Uno", result)
 
     def test_stale_values_are_not_presented_as_current(self):
         result = format_command("/sucursal Casa Matriz", OVERVIEW, [])
@@ -124,7 +124,7 @@ class FormatTests(unittest.TestCase):
     def test_missing_metrics_are_na_not_zero(self):
         overview = copy.deepcopy(OVERVIEW)
         overview["devices"][0].update(cpu_percent=None, temperature_c=None, rx_mbps=float("nan"), tx_mbps=None)
-        result = format_command("/sucursal albrook", overview, [])
+        result = format_command("/sucursal sede-uno", overview, [])
         self.assertIn("CPU N/D", result)
         self.assertIn("entrada N/D · salida N/D", result)
         self.assertNotIn("nan", result)
@@ -157,7 +157,7 @@ class FormatTests(unittest.TestCase):
 
     def test_commands_help_and_unknown_site(self):
         self.assertIn("/historial 24h", format_command("/start", OVERVIEW, []))
-        self.assertIn("Albrook", format_command("/sucursal", OVERVIEW, []))
+        self.assertIn("Sede-Uno", format_command("/sucursal", OVERVIEW, []))
         self.assertIn("No encuentro", format_command("/sucursal inexistente", OVERVIEW, []))
         self.assertIn("Usa /historial 24h", format_command("/historial 999h", OVERVIEW, []))
 
