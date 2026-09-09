@@ -113,7 +113,7 @@
     $("#telegram-demo").hidden = !demo;
     $("#telegram-live").hidden = demo;
     text("#telegram-subtitle", demo ? "Telegram · conversación simulada" : "Guía de consultas desde tu teléfono");
-    text("#live-site-command", `/sucursal ${state.selected || "albrook"}`);
+    text("#live-site-command", `/sucursal ${state.selected || "sede-uno"}`);
   }
 
   function renderDevices() {
@@ -429,7 +429,7 @@
   $(".monogram").addEventListener("click", (event) => { event.preventDefault(); setView("general"); });
   $("#show-events").addEventListener("click", () => setView("events"));
   $("#retry").addEventListener("click", refresh);
-  document.querySelectorAll("[data-command]").forEach((button) => button.addEventListener("click", () => sendCommand(button.dataset.command === "selected" ? `/sucursal ${state.selected || "albrook"}` : button.dataset.command)));
+  document.querySelectorAll("[data-command]").forEach((button) => button.addEventListener("click", () => sendCommand(button.dataset.command === "selected" ? `/sucursal ${state.selected || "sede-uno"}` : button.dataset.command)));
   $("#command-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const input = $("#command-input");
