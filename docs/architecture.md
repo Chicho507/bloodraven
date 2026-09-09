@@ -44,7 +44,7 @@ Los contadores SNMP de 64 bits se conservan como enteros. Las tasas se calculan 
 2. Usuario SNMPv3 de lectura y algoritmos disponibles por firmware.
 3. Lectura CBS350 de CPU/temperatura contrastada con su administración web.
 4. Índice y sentido de la interfaz que transporta el tráfico que interesa.
-5. Revisión documentada del aviso SG350 antes de habilitar Colón.
+5. Revisión documentada del aviso SG350 antes de habilitar Depósito.
 6. Umbrales térmicos propios del modelo y criterios operativos de alertas.
 7. Confianza de certificados en los equipos cliente y acceso privado del bot.
 
