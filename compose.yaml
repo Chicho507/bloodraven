@@ -5,10 +5,12 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
+      BR_BRANDING_DIR: /opt/bloodraven/config/branding
       BR_DATA_DIR: /data
       BR_INVENTORY: /opt/bloodraven/config/devices.yml
     volumes:
       - measurements:/data
+      - ./config/branding:/opt/bloodraven/config/branding:ro
       - ./config/devices.yml:/opt/bloodraven/config/devices.yml:ro
     read_only: true
     tmpfs:

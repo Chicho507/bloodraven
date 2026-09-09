@@ -18,3 +18,5 @@ htmlcov/
 *.key
 *.p12
 .DS_Store
+
+config/branding/
