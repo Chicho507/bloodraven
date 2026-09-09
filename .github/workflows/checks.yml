@@ -28,3 +28,17 @@ jobs:
       - name: Stop isolated deployment
         if: always()
         run: docker compose down
+      - name: Build optional Cloudflare DNS module
+        run: docker build -t bloodraven-caddy-cloudflare:2.11.4 deploy/caddy
+      - name: Check private TLS profile and configuration without external network
+        env:
+          BR_HOSTNAME: monitor.example.com
+          BR_BIND_IP: 127.0.0.1
+        run: |
+          mkdir -p secrets
+          printf '%s' 'fake-cloudflare-ci-token-never-used-online' > secrets/cloudflare_api_token
+          python scripts/check_tls_compose.py
+          docker run --rm --network none -e BR_HOSTNAME=monitor.example.com \
+            -v "$PWD/secrets/cloudflare_api_token:/run/secrets/cloudflare_api_token:ro" \
+            bloodraven-caddy-cloudflare:2.11.4 \
+            caddy validate --config /etc/caddy/Caddyfile.cloudflare --adapter caddyfile

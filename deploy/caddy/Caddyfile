@@ -1,0 +1,15 @@
+{
+    auto_https disable_redirects
+    admin off
+    persist_config off
+    default_sni {$BR_HOSTNAME}
+}
+
+https://{$BR_HOSTNAME} {
+    tls {
+        ca https://acme-v02.api.letsencrypt.org/directory
+        dns cloudflare {env.CF_API_TOKEN}
+        resolvers {$BR_ACME_RESOLVERS:1.1.1.1:53 1.0.0.1:53}
+    }
+    reverse_proxy app:8000
+}
