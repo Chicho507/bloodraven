@@ -11,3 +11,8 @@ Al actualizar un despliegue anterior, conservar el logo en esta carpeta **antes 
 Para acceso a través de NAT/VPN, `BR_HOSTNAME` debe ser la IP o el DNS que utiliza el navegador. Si se define `BR_PUBLIC_ORIGIN`, debe ser la URL HTTPS exacta de acceso. Esta versión admite un solo origen para las operaciones autenticadas. Actualizar ambas opciones al cambiar de dirección y recrear app y proxy. El NAT debe reenviar TCP 443 al proxy; esto se configura en la red corporativa. La CA del certificado debe ser de confianza para los clientes.
 
 No publicar direcciones de despliegue, inventarios reales, logos corporativos, configuraciones locales ni capturas del entorno. Eliminar archivos de la rama actual no elimina el historial, forks o copias descargadas anteriormente.
+# Directorio de sucursales
+
+El archivo local `config/branding/sites.json` puede contener una lista JSON de nombres, por ejemplo `["Oficina Central", "Sede Regional"]`. Se aceptan hasta 100 nombres de 2 a 80 caracteres. Los duplicados se unifican conservando el orden. Si falta el archivo o su contenido es inválido, se omite el directorio.
+
+Las sucursales aparecen en el dashboard y en administración después de iniciar sesión, y como sugerencias al registrar equipos. El directorio no crea switches ni modifica sus métricas. Los nombres no se muestran en el login. Este archivo está excluido de Git y se lee del volumen de marca local; no requiere reconstruir la imagen al editarlo, solo recargar la página.
