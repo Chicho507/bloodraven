@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -10,6 +11,34 @@ from test_app import settings, login
 
 
 class BrandingTests(unittest.TestCase):
+    def test_branch_directory_is_private_escaped_and_independent_of_devices(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict('os.environ', {'BR_BRANDING_DIR': directory}):
+            names = ['Oficina Central', 'Centro <script>alert(1)</script>', ' oficina central ']
+            (Path(directory) / 'sites.json').write_text(json.dumps(names), encoding='utf-8')
+            with TestClient(create_app(settings(directory), start_workers=False)) as client:
+                self.assertNotIn('Oficina Central', client.get('/login').text)
+                self.assertEqual(client.get('/', follow_redirects=False).status_code, 303)
+                login(client)
+                before = client.get('/api/inventory').json()['devices']
+                for url in ['/', '/manage']:
+                    content = client.get(url).text
+                    self.assertIn('2 sucursales', content)
+                    self.assertIn('Oficina Central', content)
+                    self.assertIn('&lt;script&gt;', content)
+                    self.assertNotIn('<script>alert(1)</script>', content)
+                    self.assertNotIn('{{BR_BRANCH_DIRECTORY}}', content)
+                self.assertIn('<option value="Oficina Central">', client.get('/manage').text)
+                self.assertEqual(client.get('/static/sites.json').status_code, 404)
+                self.assertEqual(before, client.get('/api/inventory').json()['devices'])
+
+    def test_invalid_branch_configuration_does_not_break_pages(self):
+        from app.branding import branch_names
+        with tempfile.TemporaryDirectory() as directory, patch.dict('os.environ', {'BR_BRANDING_DIR': directory}):
+            path = Path(directory) / 'sites.json'
+            for data in ['{', '{}', '[null]', '[" "]', json.dumps(['A' * 81]), json.dumps(['Valid'] * 101)]:
+                path.write_text(data, encoding='utf-8')
+                self.assertEqual(branch_names(), [])
+
     def test_generic_login_and_fixed_logo_route(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict('os.environ', {
             'BR_ORGANIZATION': 'Demo Lab', 'BR_REGION': 'Testing', 'BR_BRANDING_DIR': directory,
